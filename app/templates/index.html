@@ -11,6 +11,9 @@
     <header class="topbar">
       <h1>Field Observation Polygon Editor</h1>
       <div class="dataset-picker">
+        <label for="apiToken">Access token</label>
+        <input id="apiToken" type="password" autocomplete="off" placeholder="Optional" />
+        <button id="tokenBtn">Save</button>
         <label for="datasetSelect">GeoPackage</label>
         <select id="datasetSelect"></select>
         <button id="loadBtn">Load</button>
@@ -49,7 +52,7 @@
     </main>
 
     <footer class="footer">
-      <span>Data folder: {{ data_dir }}</span>
+      <span>Field Observation editing service</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.1/dist/ol.js"></script>

@@ -36,6 +36,17 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dataset-picker label {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.dataset-picker input {
+  min-width: 14rem;
 }
 
 .layout {

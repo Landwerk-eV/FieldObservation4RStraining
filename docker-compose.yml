@@ -1,0 +1,18 @@
+services:
+  webui:
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      FIELDOBS_DATA_DIR: /data
+      FIELDOBS_BACKUP_DIR: /backups
+      FIELDOBS_CORS_ORIGINS: https://fieldobs.example.org
+      FIELDOBS_API_KEY: ${FIELDOBS_API_KEY:?set FIELDOBS_API_KEY}
+      FIELDOBS_MAX_FEATURES: 2000
+      FIELDOBS_BACKUP_RETENTION_DAYS: 30
+      FIELDOBS_BACKUP_RETENTION_COUNT: 30
+    volumes:
+      - ./data:/data
+      - ./backups:/backups
+    restart: unless-stopped
