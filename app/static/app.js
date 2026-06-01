@@ -1,10 +1,13 @@
 const datasetSelect = document.getElementById("datasetSelect");
+const apiTokenInput = document.getElementById("apiToken");
+const tokenBtn = document.getElementById("tokenBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
 const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
 const drawBtn = document.getElementById("drawBtn");
 const modifyBtn = document.getElementById("modifyBtn");
+const infoBtn = document.getElementById("infoBtn");
 const splitBtn = document.getElementById("splitBtn");
 const confirmSplitBtn = document.getElementById("confirmSplitBtn");
 const cancelSplitBtn = document.getElementById("cancelSplitBtn");
@@ -27,6 +30,22 @@ let activityEvents = [];
 let localFeatureCounter = 0;
 let baselineSnapshot = "";
 let isDirty = false;
+let apiToken = localStorage.getItem("fieldobs.apiToken") || "";
+const expandedFields = new Set(["LandUse", "Management_activity"]);
+
+function syncApiToken(token) {
+  apiToken = token.trim();
+  if (apiToken) {
+    localStorage.setItem("fieldobs.apiToken", apiToken);
+  } else {
+    localStorage.removeItem("fieldobs.apiToken");
+  }
+  if (apiTokenInput) {
+    apiTokenInput.value = apiToken;
+  }
+}
+
+syncApiToken(apiToken);
 
 const rasterLayer = new ol.layer.Tile({
   source: new ol.source.XYZ({
@@ -174,10 +193,22 @@ function featureLabel(feature) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const headers = new Headers(options.headers || {});
+  if (apiToken) {
+    headers.set("X-FieldObs-Token", apiToken);
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.detail || `Request failed (${response.status})`);
+    const detail = payload.detail || `Request failed (${response.status})`;
+    if (response.status === 401) {
+      throw new Error(apiToken ? `Access token rejected: ${detail}` : "Access token required");
+    }
+    throw new Error(detail);
   }
   return response.json();
 }
@@ -286,9 +317,24 @@ function fitToFeatures() {
 
 function setEditMode(mode) {
   editMode = mode;
+  document.body.dataset.editMode = mode;
   drawPolygonInteraction.setActive(mode === "draw");
   drawSplitLineInteraction.setActive(mode === "split");
-  modifyInteraction.setActive(mode !== "draw" && mode !== "split");
+  modifyInteraction.setActive(mode === "modify");
+
+  [modifyBtn, drawBtn, splitBtn, infoBtn].forEach((button) => {
+    button.classList.toggle("active", button === modifyBtn && mode === "modify");
+    button.classList.toggle("active", button === drawBtn && mode === "draw");
+    button.classList.toggle("active", button === splitBtn && mode === "split");
+    button.classList.toggle("active", button === infoBtn && mode === "info");
+  });
+}
+
+if (tokenBtn) {
+  tokenBtn.addEventListener("click", () => {
+    syncApiToken(apiTokenInput ? apiTokenInput.value : "");
+    setStatus(apiToken ? "Access token saved" : "Access token cleared");
+  });
 }
 
 async function loadDatasets() {
@@ -493,6 +539,11 @@ redoBtn.addEventListener("click", () => {
 modifyBtn.addEventListener("click", () => {
   setEditMode("modify");
   setStatus("Modify mode enabled");
+});
+
+infoBtn.addEventListener("click", () => {
+  setEditMode("info");
+  setStatus("Information mode enabled. Editing is disabled.");
 });
 
 drawBtn.addEventListener("click", () => {

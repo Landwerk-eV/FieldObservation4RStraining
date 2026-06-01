@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
 
-from .config import DATA_DIR
+from .config import FIELDOBS_API_KEY, FIELDOBS_CORS_ORIGINS
 from .geometry_ops import merge_polygon_features, split_polygon_feature
 from .gpkg_service import GeoPackageService
 from .schemas import MergeRequest, SaveFeaturesRequest, SplitRequest
@@ -19,11 +18,34 @@ service = GeoPackageService()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=FIELDOBS_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _extract_request_token(request: Request) -> str:
+    header_token = request.headers.get("x-fieldobs-token", "").strip()
+    if header_token:
+        return header_token
+
+    auth_header = request.headers.get("authorization", "").strip()
+    if auth_header.lower().startswith("bearer "):
+        return auth_header[7:].strip()
+    return ""
+
+
+@app.middleware("http")
+async def api_key_guard(request: Request, call_next):
+    if FIELDOBS_API_KEY and request.url.path.startswith("/api/") and request.url.path != "/api/health":
+        if _extract_request_token(request) != FIELDOBS_API_KEY:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "Unauthorized"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    return await call_next(request)
 
 static_dir = Path(__file__).parent / "static"
 templates_dir = Path(__file__).parent / "templates"
@@ -36,15 +58,17 @@ async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {
-            "data_dir": str(DATA_DIR),
-        },
+        {},
     )
 
 
 @app.get("/api/health")
 async def health() -> dict:
-    return {"status": "ok", "data_dir": str(DATA_DIR)}
+    return {
+        "status": "ok",
+        "auth_enabled": bool(FIELDOBS_API_KEY),
+        "cors_origins": FIELDOBS_CORS_ORIGINS,
+    }
 
 
 @app.get("/api/datasets")

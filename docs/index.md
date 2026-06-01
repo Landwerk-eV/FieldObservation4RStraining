@@ -33,6 +33,7 @@ The first version covers the core ideas from the source presentation:
 ## Structure
 
 - The _Grassland Observation Framework_ section explains purpose, workflow, and notation.
+- Web UI installation and troubleshooting guidance is available at [Web UI Setup and Troubleshooting](framework/web-ui-setup.md).
 - The _Classification Scheme_ section defines the initial tag set.
 - The _Data Publication_ section documents how observations move into a versioned public resource.
 

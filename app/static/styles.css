@@ -36,6 +36,17 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dataset-picker label {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.dataset-picker input {
+  min-width: 14rem;
 }
 
 .layout {
@@ -61,6 +72,7 @@ body {
   padding: 0.65rem;
   background: var(--panel);
   border-top: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 .side-panel {
@@ -111,6 +123,29 @@ button {
   resize: vertical;
   line-height: 1.35;
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+#attrForm input,
+#attrForm textarea {
+  width: 100%;
+}
+
+button.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(196, 89, 46, 0.18);
+}
+
+body[data-edit-mode="info"] #map {
+  cursor: default;
+}
+
+body[data-edit-mode="modify"] #modifyBtn,
+body[data-edit-mode="draw"] #drawBtn,
+body[data-edit-mode="split"] #splitBtn,
+body[data-edit-mode="info"] #infoBtn {
+  background: var(--accent);
+  color: #fff;
+  border-color: #9f421f;
 }
 
 button {

@@ -10,7 +10,15 @@ from pathlib import Path
 import fiona
 import geopandas as gpd
 
-from .config import BACKUP_DIR, DATA_DIR, DEFAULT_LAYER, PREFERRED_EDITABLE_FIELDS
+from .config import (
+    BACKUP_DIR,
+    DATA_DIR,
+    DEFAULT_LAYER,
+    FIELDOBS_BACKUP_RETENTION_COUNT,
+    FIELDOBS_BACKUP_RETENTION_DAYS,
+    FIELDOBS_MAX_FEATURES,
+    PREFERRED_EDITABLE_FIELDS,
+)
 from .validation import validate_feature_collection_properties
 
 
@@ -79,16 +87,22 @@ class GeoPackageService:
         if layer not in layers:
             raise ValueError(f"Layer '{layer}' not found")
 
+        features = feature_collection.get("features", [])
+        if len(features) > FIELDOBS_MAX_FEATURES:
+            raise ValueError(
+                f"FeatureCollection exceeds the configured limit of {FIELDOBS_MAX_FEATURES} features"
+            )
+
         with self._write_lock:
             existing_layers = {
                 existing: gpd.read_file(dataset_path, layer=existing) for existing in layers
             }
             target_crs = existing_layers[layer].crs or "EPSG:4326"
 
-            validate_feature_collection_properties(feature_collection.get("features", []))
+            validate_feature_collection_properties(features)
 
             updated = gpd.GeoDataFrame.from_features(
-                feature_collection.get("features", []), crs="EPSG:4326"
+                features, crs="EPSG:4326"
             )
             updated = updated[updated.geometry.notna()]
             updated = updated[updated.geometry.is_valid]
@@ -116,6 +130,7 @@ class GeoPackageService:
                     )
                     first = False
                 shutil.move(tmp_file, dataset_path)
+                self._cleanup_backups(dataset_path.stem)
             finally:
                 if tmp_file.exists():
                     tmp_file.unlink(missing_ok=True)
@@ -141,3 +156,35 @@ class GeoPackageService:
         if not layers:
             raise ValueError("GeoPackage contains no layers")
         return layers[0]
+
+    def _cleanup_backups(self, dataset_stem: str) -> None:
+        if not BACKUP_DIR.exists():
+            return
+
+        backups = list(BACKUP_DIR.glob(f"{dataset_stem}.*.gpkg"))
+        if not backups:
+            return
+
+        retained: list[tuple[float, Path]] = []
+        cutoff = None
+        if FIELDOBS_BACKUP_RETENTION_DAYS > 0:
+            cutoff = datetime.now().timestamp() - (FIELDOBS_BACKUP_RETENTION_DAYS * 86400)
+
+        for backup_path in backups:
+            try:
+                modified_time = backup_path.stat().st_mtime
+            except OSError:
+                continue
+
+            if cutoff is not None and modified_time < cutoff:
+                backup_path.unlink(missing_ok=True)
+                continue
+
+            retained.append((modified_time, backup_path))
+
+        if FIELDOBS_BACKUP_RETENTION_COUNT <= 0:
+            return
+
+        retained.sort(key=lambda item: item[0], reverse=True)
+        for _, backup_path in retained[FIELDOBS_BACKUP_RETENTION_COUNT :]:
+            backup_path.unlink(missing_ok=True)
