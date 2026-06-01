@@ -93,10 +93,12 @@ body {
 
 #attrForm {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.8rem;
 }
 
 #attrForm label {
+  display: block;
+  margin-bottom: 0.35rem;
   font-size: 0.86rem;
   color: var(--muted);
 }
@@ -111,15 +113,21 @@ button {
   background: #fff;
 }
 
+.attr-field {
+  display: block;
+}
+
+.attr-textarea {
+  width: 100%;
+  min-height: 6.4rem;
+  resize: vertical;
+  line-height: 1.35;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
 #attrForm input,
 #attrForm textarea {
   width: 100%;
-}
-
-#attrForm textarea {
-  min-height: 6.5rem;
-  resize: vertical;
-  line-height: 1.35;
 }
 
 button.active {
