@@ -7,6 +7,7 @@ const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
 const drawBtn = document.getElementById("drawBtn");
 const modifyBtn = document.getElementById("modifyBtn");
+const infoBtn = document.getElementById("infoBtn");
 const splitBtn = document.getElementById("splitBtn");
 const confirmSplitBtn = document.getElementById("confirmSplitBtn");
 const cancelSplitBtn = document.getElementById("cancelSplitBtn");
@@ -30,6 +31,7 @@ let localFeatureCounter = 0;
 let baselineSnapshot = "";
 let isDirty = false;
 let apiToken = localStorage.getItem("fieldobs.apiToken") || "";
+const expandedFields = new Set(["LandUse", "Management_activity"]);
 
 function syncApiToken(token) {
   apiToken = token.trim();
@@ -285,20 +287,25 @@ function renderAttributes() {
     label.setAttribute("for", `field-${field}`);
     label.textContent = field;
 
-    const input = document.createElement("input");
-    input.id = `field-${field}`;
-    input.value = selectedFeature.get(field) || "";
-    input.addEventListener("input", (event) => {
+    const fieldValue = selectedFeature.get(field) || "";
+    const control = expandedFields.has(field) ? document.createElement("textarea") : document.createElement("input");
+    control.id = `field-${field}`;
+    control.value = fieldValue;
+    if (control.tagName === "TEXTAREA") {
+      control.rows = 4;
+      control.spellcheck = false;
+    }
+    control.addEventListener("input", (event) => {
       selectedFeature.set(field, event.target.value);
       refreshDirtyState();
       setStatus("Unsaved changes");
     });
-    input.addEventListener("change", (event) => {
+    control.addEventListener("change", (event) => {
       commitAttributeChange(field, event.target.value);
     });
 
     wrapper.appendChild(label);
-    wrapper.appendChild(input);
+    wrapper.appendChild(control);
     attrForm.appendChild(wrapper);
   });
 }
@@ -312,9 +319,17 @@ function fitToFeatures() {
 
 function setEditMode(mode) {
   editMode = mode;
+  document.body.dataset.editMode = mode;
   drawPolygonInteraction.setActive(mode === "draw");
   drawSplitLineInteraction.setActive(mode === "split");
-  modifyInteraction.setActive(mode !== "draw" && mode !== "split");
+  modifyInteraction.setActive(mode === "modify");
+
+  [modifyBtn, drawBtn, splitBtn, infoBtn].forEach((button) => {
+    button.classList.toggle("active", button === modifyBtn && mode === "modify");
+    button.classList.toggle("active", button === drawBtn && mode === "draw");
+    button.classList.toggle("active", button === splitBtn && mode === "split");
+    button.classList.toggle("active", button === infoBtn && mode === "info");
+  });
 }
 
 if (tokenBtn) {
@@ -526,6 +541,11 @@ redoBtn.addEventListener("click", () => {
 modifyBtn.addEventListener("click", () => {
   setEditMode("modify");
   setStatus("Modify mode enabled");
+});
+
+infoBtn.addEventListener("click", () => {
+  setEditMode("info");
+  setStatus("Information mode enabled. Editing is disabled.");
 });
 
 drawBtn.addEventListener("click", () => {
