@@ -61,6 +61,7 @@ body {
   padding: 0.65rem;
   background: var(--panel);
   border-top: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 .side-panel {
@@ -90,12 +91,42 @@ body {
 }
 
 #attrForm input,
+#attrForm textarea,
 #datasetSelect,
 button {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.4rem 0.55rem;
   background: #fff;
+}
+
+#attrForm input,
+#attrForm textarea {
+  width: 100%;
+}
+
+#attrForm textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.35;
+}
+
+button.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(196, 89, 46, 0.18);
+}
+
+body[data-edit-mode="info"] #map {
+  cursor: default;
+}
+
+body[data-edit-mode="modify"] #modifyBtn,
+body[data-edit-mode="draw"] #drawBtn,
+body[data-edit-mode="split"] #splitBtn,
+body[data-edit-mode="info"] #infoBtn {
+  background: var(--accent);
+  color: #fff;
+  border-color: #9f421f;
 }
 
 button {
