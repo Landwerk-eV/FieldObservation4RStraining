@@ -6,7 +6,7 @@ repo_name: FieldObservation4RStrainig on GitHub
 use_directory_urls: true
 
 theme:
-  name: shadcn
+  name: material
 
 plugins:
   - search
@@ -30,6 +30,7 @@ nav:
       - Overview and Objectives: framework/index.md
       - Observation Workflow: framework/workflow.md
       - Observation Notation: framework/notation.md
+      - Web UI Setup and Troubleshooting: framework/web-ui-setup.md
   - Classification Scheme:
       - Grassland Types: classification/grassland-types.md
       - Events and Status: classification/events-status.md

@@ -30,6 +30,11 @@ GitHub Actions publishes the site to GitHub Pages automatically on every commit 
 
 An initial local-first web UI is available for GeoPackage polygon and attribute editing.
 
+### Python version
+
+Use Python `3.10` to `3.12` for the Web UI dependencies.
+Geospatial packages in `requirements-webui.txt` are not reliably available for newer Python versions yet.
+
 ### Install app dependencies
 
 ```powershell
