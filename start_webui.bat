@@ -3,9 +3,11 @@ setlocal
 
 cd /d "%~dp0"
 
-set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
-if exist "%~dp0.venv312\Scripts\python.exe" set "PYTHON_EXE=%~dp0.venv312\Scripts\python.exe"
-set "APP_URL=http://127.0.0.1:8000"
+set "PYTHON_EXE=%~dp0.venv312\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" (
+  set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
+)
+set "APP_PORT="
 
 if not exist "%PYTHON_EXE%" (
   echo [ERROR] Python virtual environment not found at:
@@ -58,6 +60,7 @@ if %PY_MINOR% GTR 12 (
   exit /b 1
 )
 
+echo [INFO] Using Python: %PYTHON_EXE%
 echo [INFO] Checking Web UI dependencies...
 "%PYTHON_EXE%" -c "import fastapi,uvicorn,jinja2,geopandas,fiona,shapely,pyproj" >nul 2>&1
 if errorlevel 1 (
@@ -72,12 +75,35 @@ if errorlevel 1 (
   echo [INFO] Dependencies already installed.
 )
 
+for /f %%P in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$listeners = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() | ForEach-Object { $_.Port }; 8000..8005 | Where-Object { $_ -notin $listeners } | Select-Object -First 1"') do (
+  set "APP_PORT=%%P"
+)
+
+if not defined APP_PORT (
+  echo [ERROR] No free localhost port found in range 8000-8005.
+  pause
+  exit /b 1
+)
+
+set "APP_URL=http://127.0.0.1:%APP_PORT%"
+
 echo [INFO] Starting Web UI server...
 echo [INFO] URL: %APP_URL%
-echo [INFO] This window stays open while the server is running.
-echo [INFO] Press CTRL+C to stop the server.
+echo [INFO] Server log opens in a separate window.
+start "Field Observation Web UI Server" "%PYTHON_EXE%" -m uvicorn app.main:app --host 127.0.0.1 --port %APP_PORT%
+
+echo [INFO] Waiting for server readiness...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; $url='%APP_URL%/api/health'; for($i=0; $i -lt 60; $i++) { try { $response = Invoke-RestMethod -Uri $url -TimeoutSec 2; if ($response.status -eq 'ok') { exit 0 } } catch {} Start-Sleep -Milliseconds 500 }; exit 1"
+if errorlevel 1 (
+  echo [ERROR] Web UI did not become ready in time.
+  echo [ERROR] Check the 'Field Observation Web UI Server' window for details.
+  pause
+  exit /b 1
+)
+
 start "" "%APP_URL%"
-"%PYTHON_EXE%" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+echo [INFO] Browser opened at %APP_URL%
+echo [INFO] You can close this launcher window.
 
 echo.
 echo [INFO] Web UI server stopped.

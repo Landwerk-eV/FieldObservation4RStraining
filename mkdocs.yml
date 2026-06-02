@@ -30,6 +30,7 @@ nav:
       - Overview and Objectives: framework/index.md
       - Observation Workflow: framework/workflow.md
       - Observation Notation: framework/notation.md
+      - GeoPackage Collaboration and Merge Review: framework/geopackage-collaboration.md
       - Web UI Setup and Troubleshooting: framework/web-ui-setup.md
   - Classification Scheme:
       - Grassland Types: classification/grassland-types.md

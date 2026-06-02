@@ -22,7 +22,7 @@ let currentDataset = null;
 let currentLayer = null;
 let editableFields = [];
 let selectedFeature = null;
-let editMode = "modify";
+let editMode = "info";
 let pendingSplit = null;
 let historyStack = [];
 let redoStack = [];
@@ -658,6 +658,16 @@ modifyInteraction.on("modifyend", (event) => {
   refreshDirtyState();
   const labels = event.features.getArray().map((feature) => featureLabel(feature)).join(", ");
   logAction(`Modified polygon geometry (${labels})`);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+  if (editMode !== "info") {
+    setEditMode("info");
+    setStatus("Information mode enabled. Editing is disabled.");
+  }
 });
 
 window.addEventListener("beforeunload", (event) => {
